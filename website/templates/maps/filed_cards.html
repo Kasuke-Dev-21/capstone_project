@@ -1,0 +1,293 @@
+{% extends "_debug/test-web.html" %}
+
+{% block title %}
+Search Reports
+{% endblock %}
+
+{% block head %}
+<style>
+    /* Container for filter controls */
+    .filter-container {
+        padding: 20px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    /* Report card styling */
+    .report-card {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #fff;
+    }
+
+    .report-card button{
+        background-color: #800020;
+        color: white;
+        border: 0;
+        border-radius: 5px;
+    }
+
+    /* Styling for report information */
+    .report-info {
+        margin-left: 20px;
+    }
+
+    /* Styling for filter labels and inputs */
+    label {
+        margin-right: 10px;
+    }
+
+    /* Styling for search input */
+    #search-input {
+        margin-left: 10px;
+        padding: 5px;
+    }
+
+        /* Modal styles */
+    .modal {
+        display: none; /* Hide modal by default */
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4); /* Black background with opacity */
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .hidden {
+    display: none;
+    }
+</style>
+All Hazard Reports
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="filter-container">
+    <label for="status-filter">Status:</label>
+    <select id="status-filter">
+        <option value="Standby">Show Pending</option>
+        <option value="Active">Show Approved</option>
+    </select>
+    <label for="map-filter">Location:</label>
+    <select id="map-filter">
+        <option value="">------</option>
+    </select>
+    <label for="type-filter">Hazard Type:</label>
+    <select id="type-filter">
+        <option value="">------</option>
+        <option value="Accident">Accident Prone</option>
+        <option value="Damaged Area">Need of Repair</option>
+        <option value="Design Flaw">Structural Integrity</option>
+        <option value="Electrical Appliance">Involving Electrical Appliances</option>
+        <option value="Flammable">Flammable Hazards</option>
+        <option value="Explosive">Explosive Hazards</option>
+        <option value="Liquid Substance">Slippery or Corrosive Substances</option>
+        <option value="Unknown">Other Unknown Hazards</option>
+    </select>
+    <label for="search-input">Search:</label>
+    <input type="text" id="search-input">
+</div>
+
+{% load tz %}
+<!-- Report Cards -->
+{% for report in reports %}
+    <div class="report-card" data-status="{{ report.status }}" data-map="{{ report.map }}" data-area="{{ report.location | lower}}" data-category="{{ report.type }}">
+        <div class="report-info">
+            <p>{{ report }}</p>
+            <p class="hidden">Location: {{ report.map }}</p>
+            <p class="hidden">Specifics: {{ report.location }}</p>
+            <p class="hidden">Type: {{ report.type }}</p>
+            <p class="hidden">Status: {{ report.status }}</p>
+            <p>Time Reported: {{ report.date_reported | date:"F j, Y - h:i A" }}</p>
+            <p class="hidden">Description: {{ report.description }}</p>
+        </div>
+        {% if report.status == 'Active' %}
+            <button onclick="toggleStatus(this)" data-active-text="Re-examine">Re-examine</button>
+        {% else %}
+            <button onclick="toggleStatus(this)" data-active-text="Approve">Approve</button>
+            {% if report.status == 'Standby' %}
+                <button onclick="deleteReport(this)">Delete</button> <!-- Add delete button for pending reports -->
+            {% endif %}
+        {% endif %}
+        <button onclick="showModal(this)">View Details</button>
+        <!-- Form for updating status -->
+        <form action="{% url 'update_status' %}" method="post" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="report_id" value="{{ report.id }}">
+            <input type="hidden" name="new_status" value="">
+        </form>
+    </div>
+{% endfor %}
+
+<!-- Modal -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Report Details</h2>
+        <p id="modalLocation"></p>
+        <p id="modalSpecifics"></p>
+        <p id="modalDescription"></p>
+        <p id="modalDate"></p>
+    </div>
+</div>
+
+<script>
+function toggleStatus(button) {
+    const reportCard = button.closest('.report-card');
+    const status = reportCard.getAttribute('data-status');
+    const newStatus = status === 'Active' ? 'Standby' : 'Active';
+
+    // Set the new status value to the form
+    const form = reportCard.querySelector('form');
+    form.querySelector('input[name="new_status"]').value = newStatus;
+
+    // Set button text based on new status
+    const activeText = button.getAttribute('data-active-text');
+    button.textContent = newStatus === 'Active' ? activeText : 'Approve';
+
+    // Submit the form
+    form.submit();
+}
+
+function deleteReport(button) {
+    const reportCard = button.closest('.report-card');
+    const reportId = reportCard.querySelector('input[name="report_id"]').value;
+
+    if (confirm("Are you sure you want to delete this report?")) {
+        const form = reportCard.querySelector('form');
+        form.querySelector('input[name="new_status"]').value = "Removed";
+        form.submit();
+    }
+}
+
+function showModal(button) {
+    const reportCard = button.closest('.report-card');
+    const location = reportCard.querySelector('.report-info p:nth-child(2)').textContent.split(': ')[1];
+    const specifics = reportCard.querySelector('.report-info p:nth-child(3)').textContent.split(': ')[1];
+    const description = reportCard.querySelector('.report-info p:nth-child(7)').textContent.split(': ')[1];
+    const date = reportCard.querySelector('.report-info p:nth-child(6)').textContent.split(': ')[1];
+
+    const modalLocation = document.getElementById('modalLocation');
+    const modalSpecifics = document.getElementById('modalSpecifics');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalDate = document.getElementById('modalDate');
+
+    modalLocation.textContent = "Location: " + location;
+    modalSpecifics.textContent = "Specifics: " + specifics;
+    modalDescription.textContent = "Description: " + description;
+    modalDate.textContent = "Date Reported: " + date;
+
+    const modal = document.getElementById('reportModal');
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    const modal = document.getElementById('reportModal');
+    modal.style.display = 'none';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('reportModal');
+    if (event.target === modal) {
+        modal.style.display = "none";
+    }
+}
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const statusFilter = document.getElementById('status-filter');
+        const mapFilter = document.getElementById('map-filter');
+        const typeFilter = document.getElementById('type-filter');
+        const searchInput = document.getElementById('search-input');
+        const reportCards = document.querySelectorAll('.report-card');
+
+        // Dynamically generate map options
+        const mapOptions = new Set();
+        reportCards.forEach(function (card) {
+            mapOptions.add(card.getAttribute('data-map'));
+        });
+        mapOptions.forEach(function (map) {
+            const option = document.createElement('option');
+            option.value = map;
+            option.textContent = map;
+            mapFilter.appendChild(option);
+        });
+
+        // Function to filter report cards
+        function filterReportCards() {
+            const selectedStatus = statusFilter.value;
+            const selectedMap = mapFilter.value;
+            const selectedType = typeFilter.value;
+            const searchQuery = searchInput.value.trim().toLowerCase();
+
+            reportCards.forEach(function (card) {
+                const status = card.getAttribute('data-status');
+                const map = card.getAttribute('data-map');
+                const area = card.getAttribute('data-area');
+                const category = card.getAttribute('data-category');
+
+                const matchesStatus = selectedStatus === '' || status === selectedStatus;
+                const matchesMap = selectedMap === '' || map === selectedMap;
+                const matchesType = selectedType === '' || category === selectedType;
+                const matchesSearch = area.toLowerCase().includes(searchQuery);
+
+                if (matchesStatus && matchesMap && matchesType && matchesSearch) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Event listeners for filter controls
+        statusFilter.addEventListener('change', filterReportCards);
+        mapFilter.addEventListener('change', filterReportCards);
+        typeFilter.addEventListener('change', filterReportCards);
+        searchInput.addEventListener('input', filterReportCards);
+
+        // Initial filter on page load
+        filterReportCards();
+    });
+</script>
+
+<div class="floatbutton">
+  <a href="/maps">Back to Hazard Maps</a>
+</div>
+{% endblock %}

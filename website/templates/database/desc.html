@@ -1,0 +1,80 @@
+{% extends "_debug/test-web.html" %}
+
+{% load static %}
+
+{% block title %}
+  Details about {{ student.firstname }} {{ student.lastname }}
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+<style>
+/* css for desc url */
+
+/* Styling for the license card */
+.license-card {
+    width: 60%;
+    height: 100%;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    margin: auto;
+    padding-top: 100px
+    overflow: hidden; /* Prevent content overflow */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: row;
+}
+
+.full-profile-picture img {
+    width: 300px; /* Adjust as needed */
+    height: 300px; /* Adjust as needed */
+    padding: 30px;
+    border-radius: 50%;
+}
+
+</style>
+MMIS Attendance Database
+{% endblock %}
+{% block content %}
+
+<div class="license-card">
+    <!-- Profile Content Goes Here -->
+    <div class="full-profile-picture">
+        <img src="{% static 'images/placeholder.jpg' %}" alt="Profile Picture">
+    </div>
+    <div>
+        <h1>{{ student.lastname }}, {{ student.fullname }}</h1>
+        <p style="font-size:20px">Age: {{ student.age }}</p>
+        <p style="font-size:20px">Grade: {{ student.level }}</p>
+        <p style="font-size:20px">Strand: {{ student.strand }}</p>
+        <p style="font-size:20px">Contact Number: {{ student.contact }}</p>
+        <p style="font-size:20px">E-mail Address: {{ student.mail_address }}</p>
+    </div>
+    <div style="clear:both;"></div> <!-- Clear floating elements -->
+    <div style="margin-top: 0px;">
+        <!-- Configure Profile Button -->
+        <div style="float: left; margin-right: 30px; position: relative; top: 30px; left: 40px;">
+            <a style="background-color: #800020; color: #ddd; padding: 4px 6px; text-decoration: none; font-size: 20px;" href="edit/{{ student.id }}">Configure Profile</a>
+        </div>
+        <!-- Status Section -->
+        <div style="float: left; position: relative; top: 200px; left: 40px;">
+            <p style="font-size:30px; font-family: Myriad, Frutiger, sans-serif; font-weight:bold;">{{ student.status }}</p>
+        </div>
+    </div>
+</div>
+
+
+<div class="floatbutton">
+  <a href="/database">Back to Attendance List</a>
+</div>
+{% endblock %}

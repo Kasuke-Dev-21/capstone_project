@@ -1,0 +1,70 @@
+{% extends "_debug/test-web.html" %}
+
+{% block title %}
+  Profile Change
+{% endblock %}
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+<style>
+/* css for changedesc.html */
+/* Style the form container */
+.form-container {
+    max-width: 500px;
+    margin: auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Add specific class for the edit form */
+.edit-form {
+    width: 460px; /* Adjust as needed */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the submit button */
+.btn-submit {
+    background-color: #800020;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+/* Hover effect for submit button */
+.btn-submit:hover {
+    background-color: #c01010;
+}
+
+</style>
+Edit Profile
+{% endblock %}
+{% block content %}
+
+<div class="form-container">
+    <form method="post" class="edit-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Save Changes</button>
+    </form>
+</div>
+<div class="floatbutton">
+  <a href="/database">Back to Attendance List</a>
+</div>
+{% endblock %}

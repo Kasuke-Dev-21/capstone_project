@@ -1,0 +1,112 @@
+{% extends "_debug/test-web.html" %}
+
+{% load static %}
+
+{% block title %}
+  Hazard Maps
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+  <style>
+    .carousel-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .carousel-image {
+      width: 500px;
+      height: 500px;
+    }
+
+    .carousel-controls {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    input {
+      background-color: #fff;
+      color: #800020;
+      text-align: center;
+      font-family: Segoe UI, Helvetica, sans-serif;
+      font-size: 100px;
+      font-weight: bold;
+      margin: 10%;
+      border: 0;
+    }
+
+    input:hover {
+      color: #f00;
+      border: 0;
+    }
+
+    #multiple-items {
+    justify-content: space-between;/* Distribute items evenly with spaces between */
+    padding-left: 10%;
+    padding-right: 10%;
+    }
+  </style>
+  Hazard Maps here
+{% endblock %}
+
+{% block content %}
+  <form name="myform" class="carousel-controls">
+    <input type="button" value="◀" alt="Go Back" onClick="goBack()">
+        <div class="carousel-container">
+            <h2>{{ map.title }}</h2>
+            <img src="{% static 'images/building_maps/sample_map.jpg' %}" class="carousel-image" name="cappict"><br>
+        </div>
+    <input type="button" value="▶" alt="Go Forward" onClick="goForward()">
+  </form>
+
+{% if user.is_authenticated %}
+  <div class="floatbutton" id="multiple-items">
+      <a href="/maps/report">File a Report for a Recent Hazard</a>
+      <a href="/maps/search">Approve Reports Submitted by the School</a>
+      <a href="/maps/edit">Configure Hazard Maps</a>
+  </div>
+      {% else %}
+  <div class="floatbutton">
+      <a href="/maps/report">File a Report for a Recent Hazard</a>
+      {% endif %}
+  </div>
+  <script>
+    var pict = [
+      {% for map in maps %}
+        ["{% static map.image_path %}"]{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    var num = 0;
+
+    function goForward() {
+      num++;
+      if (num > pict.length - 1) {
+        num = 0;
+      }
+      document.cappict.src = pict[num][0];
+    }
+
+    function goBack() {
+      num--;
+      if (num < 0) {
+        num = pict.length - 1;
+      }
+      document.cappict.src = pict[num][0];
+    }
+  </script>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "_debug/test-web.html" %}
+
+{% block head %}
+<style>
+.form-container {
+    margin: 20px auto; /* Center the form horizontally */
+    max-width: 500px; /* Limit the width of the form */
+    padding: 20px; /* Add padding around the form */
+    background-color: #f9f9f9; /* Background color for the form */
+    border: 0;
+    border-radius: 5px; /* Rounded corners for the form */
+}
+.form-container form {
+    width: 460px; /* Adjust as needed */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.edit-form input[type="text"],
+.edit-form select,
+.edit-form textarea{
+  width: 50%;
+  background-color: #f9f9f9; /* Set background color */
+  font-family: Segoe UI, Helvetica, sans-serif;
+  padding: 10px; /* Add padding for spacing */
+  margin-bottom: 10px; /* Add margin between input fields */
+  border: 2px solid #ecc; /* Add border for visual clarity */
+  border-radius: 5px; /* Add border radius for rounded corners */
+}
+
+.btn-submit {
+  width: 100%; /* Make the button fill the container */
+  padding: 10px; /* Add padding for spacing */
+  background-color: #f22; /* Set background color */
+  color: #fff; /* Set text color */
+  border: none; /* Remove border */
+  border-radius: 5px; /* Add border radius for rounded corners */
+  cursor: pointer; /* Add pointer cursor on hover */
+}
+
+.btn-submit:hover {
+  background-color: #800020; /* Change background color on hover */
+}
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Could be more or less, depending on screen size */
+    te
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+</style>
+File Hazard Report
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block title %}
+  File Hazard Report
+{% endblock %}
+{% block content %}
+
+<div class="form-container">
+    <form id="reportForm" method="post" class="edit-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="button" id="submitBtn" class="btn-submit">Submit</button>
+    </form>
+</div>
+
+<!-- Modal -->
+<div id="confirmationModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Are you sure you want to submit this hazard report?</p>
+    <button id="confirmBtn">Yes</button>
+    <button id="cancelBtn">No</button>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.getElementById('confirmationModal');
+    var btn = document.getElementById("submitBtn");
+    var span = document.getElementsByClassName("close")[0];
+    var confirmBtn = document.getElementById("confirmBtn");
+    var cancelBtn = document.getElementById("cancelBtn");
+
+    btn.onclick = function () {
+        modal.style.display = "block";
+    }
+
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    confirmBtn.onclick = function () {
+        modal.style.display = "none";
+        document.getElementById("reportForm").submit();
+    }
+
+    cancelBtn.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+});
+</script>
+
+<div class="floatbutton">
+  <a href="/maps">Back to Hazard Maps</a>
+</div>
+{% endblock %}

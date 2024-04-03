@@ -1,0 +1,65 @@
+{% extends "_debug/test-web.html" %}
+
+{% load static %}
+
+{% block title %}
+Search Reports
+{% endblock %}
+
+{% block head %}
+Request Status Change
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="login-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="map-container">
+    <img src="{% static 'images/building_maps/sample_map.jpg' %}" id="map">
+    <div id="circles"></div>
+  </div>
+
+  <script>
+    let circles = []; // Array to store circle elements
+    let map = document.getElementById('map');
+    let circlesContainer = document.getElementById('circles');
+
+    // Function to create a new draggable circle
+    function createCircle(x, y) {
+      let circle = document.createElement('div');
+      circle.classList.add('circle');
+      circle.style.left = x + 'px';
+      circle.style.top = y + 'px';
+
+      // Make the circle draggable
+      circle.draggable = true;
+      circle.addEventListener('dragstart', function(event) {
+        event.dataTransfer.setData('text/plain', ''); // Required for drag-and-drop to work in some browsers
+      });
+
+      // Make the circle interactable (you can add more functionality here)
+      circle.addEventListener('click', function() {
+        alert('You clicked on a circle!');
+      });
+
+      circlesContainer.appendChild(circle);
+      circles.push(circle);
+    }
+
+    // Event listener for clicking on the map to create a new circle
+    map.addEventListener('click', function(event) {
+      let x = event.offsetX;
+      let y = event.offsetY;
+      createCircle(x, y);
+    });
+  </script>
+
+{% endblock %}

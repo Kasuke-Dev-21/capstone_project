@@ -1,0 +1,190 @@
+{% extends "_debug/test-web.html" %}
+
+{% load static %}
+
+{% block title %}
+  DRRM Thing
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+<style>
+/* css for database url */
+.profile-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 10px;
+  width: 200px;
+  display: flex;
+  ;
+}
+
+.profile-picture {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-name {
+  font-weight: bold;
+}
+
+.profile-name a {
+  color: #333;
+  text-align: center;
+  text-decoration: none;
+  font-size: 20px;
+}
+
+.profile-name a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+
+.profile-info {
+  margin-top: 10px;
+}
+
+</style>
+Student Attendance Database
+{% endblock %}
+
+{% block content %}
+<div style="padding-left:20px; padding-right:20px;">
+    <div style="padding-left:10px; margin:auto; background-color:#f00; color:#fff; height: 40px; text-align:left; border:0; border-radius:10px;">
+        <h3>Filter by:</h3>
+    </div>
+    <div>
+        <!-- Filter Controls -->
+        <label for="age-filter">Age:</label>
+        <select id="age-filter">
+           <option value="">All</option>
+        <!-- Age options will be dynamically added here -->
+        </select>
+
+        <label for="grade-filter">Grade:</label>
+        <select id="grade-filter">
+            <option value="">All</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+        <!-- Add more grade options as needed -->
+        </select>
+
+        <label for="strand-filter">Strand:</label>
+        <select id="strand-filter">
+            <option value="">All</option>
+            <option value="ABM">ABM</option>
+            <option value="STEM">STEM</option>
+            <option value="HUMSS">HUMSS</option>
+        <!-- Add more grade options as needed -->
+        </select>
+
+        <!-- Search Parameter Selector -->
+        <label for="search-param">Search by:</label>
+        <select id="search-param">
+            <option value="first-name">First Name</option>
+            <option value="last-name">Last Name</option>
+        </select>
+
+        <!-- Search Filter -->
+        <label for="search-input">Search:</label>
+        <input type="text" id="search-input">
+    </div>
+</div>
+
+<!-- Profile Cards -->
+{% for student in students %}
+    <div class="profile-card" data-age="{{ student.age }}" data-grade="{{ student.level }}" data-strand="{{ student.strand }}" data-first-name="{{ student.firstname | lower }}" data-last-name="{{ student.lastname | lower }}">
+        <img class="profile-picture" src="{% static 'images/placeholder.jpg' %}" alt="Placeholder">
+        <div class="profile-name">
+            <a href="profile/{{ student.id }}">{{ student.firstname }} {{ student.lastname }}</a>
+        </div>
+        <div class="profile-info">
+            <p>Age: {{ student.age }}</p>
+            <p>Grade: {{ student.level }}</p>
+            <p>Strand: {{ student.strand }}</p>
+        </div>
+    </div>
+{% endfor %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ageFilter = document.getElementById('age-filter');
+        const gradeFilter = document.getElementById('grade-filter');
+        const strandFilter = document.getElementById('strand-filter');
+        const searchParamSelect = document.getElementById('search-param');
+        const searchInput = document.getElementById('search-input');
+        const profileCards = document.querySelectorAll('.profile-card');
+
+        // Dynamically generate age options
+        const ageOptions = new Set();
+        profileCards.forEach(function (card) {
+            ageOptions.add(card.getAttribute('data-age'));
+        });
+        ageOptions.forEach(function (age) {
+            const option = document.createElement('option');
+            option.value = age;
+            option.textContent = age;
+            ageFilter.appendChild(option);
+        });
+
+        // Function to filter profile cards
+        function filterProfileCards() {
+            const selectedAge = ageFilter.value;
+            const selectedGrade = gradeFilter.value;
+            const selectedStrand = strandFilter.value;
+            const searchParam = searchParamSelect.value;
+            const searchQuery = searchInput.value.trim().toLowerCase();
+
+            profileCards.forEach(function (card) {
+                const age = card.getAttribute('data-age');
+                const grade = card.getAttribute('data-grade');
+                const strand = card.getAttribute('data-strand');
+                const firstName = card.getAttribute('data-first-name');
+                const lastName = card.getAttribute('data-last-name');
+
+                const matchesAge = selectedAge === '' || age === selectedAge;
+                const matchesGrade = selectedGrade === '' || grade === selectedGrade;
+                const matchesStrand = selectedStrand === '' || strand === selectedStrand;
+                let matchesSearch = false;
+
+                if (searchParam === 'first-name') {
+                    matchesSearch = firstName.includes(searchQuery);
+                } else if (searchParam === 'last-name') {
+                    matchesSearch = lastName.includes(searchQuery);
+                }
+
+                if (matchesAge && matchesGrade && matchesStrand && matchesSearch) {
+                    card.style.display = 'inline-block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Event listeners for filter controls
+        ageFilter.addEventListener('change', filterProfileCards);
+        gradeFilter.addEventListener('change', filterProfileCards);
+        strandFilter.addEventListener('change', filterProfileCards);
+        searchParamSelect.addEventListener('change', filterProfileCards);
+        searchInput.addEventListener('input', filterProfileCards);
+
+        // Initial filter on page load
+        filterProfileCards();
+    });
+</script>
+
+{% endblock %}

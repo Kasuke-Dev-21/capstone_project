@@ -1,0 +1,49 @@
+{% extends "_debug/test-web.html" %}
+
+{% block title %}
+  DRRM Thing
+{% endblock %}
+
+{% block navlinks %}
+    {% if user.is_authenticated %}
+        <form action="{% url 'logout' %}" method="post" id="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}" class="login-button">Login</a>
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+MMIS Senior High School DRRM Website
+{% endblock %}
+
+{% block content %}
+<div style="margin:auto; height:150px; width:93%; background-color:#f22;">
+</div>
+
+<div style="margin:auto; width: 93%; padding-top: 20px; display: flex; justify-content: space-between;">
+  <!-- First section -->
+  <div style="flex: 1; height: 100%; padding-bottom: 15%; background-color: #ccc; margin-right: 10px;">
+    <h2 style="text-align: center;">Attendance Database</h2>
+    <p style="text-align: center;">View the attendance status of all the Senior High School students</p>
+    <p class="floatbutton"><a href="database/">Check Student Attendance</a></p>
+  </div>
+
+  <!-- Second section -->
+  <div style="flex: 1; height: 100%; padding-bottom: 15%; background-color: #ddd; margin-right: 10px;">
+    <h2 style="text-align: center;">Hazard Maps</h2>
+    <p style="text-align: center;">View hazard maps of different sections of the campus</p>
+    <p class="floatbutton"><a href="maps/">Check Hazard Maps</a></p>
+  </div>
+
+  <!-- Third section -->
+  <div style="flex: 1; height: 100%; padding-bottom: 15%; background-color: #eee;">
+    <h2 style="text-align: center;">QR Attendance Check</h2>
+    <p style="text-align: center;">Update a student's attendance via QR Code</p>
+    <p class="floatbutton"><a href="qr_scan/">QR Code Scan</a></p>
+  </div>
+</div>
+
+{% endblock %}
