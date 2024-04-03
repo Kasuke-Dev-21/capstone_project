@@ -7,6 +7,34 @@ Search Reports
 {% endblock %}
 
 {% block head %}
+    <style>
+        /* Style for debug panel */
+        #debug-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f0f0f0;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto; /* Enable scrolling if content exceeds height */
+            max-height: 200px; /* Limit the height to prevent it from covering the scanner */
+            display: none; /* Hide by default */
+        }
+
+        #debug-toggle {
+            position: fixed;
+            bottom: 210px; /* Position below the debug panel */
+            left: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 9999; /* Ensure it's above other elements */
+        }
+    </style>
+
 Request Status Change
 {% endblock %}
 
@@ -28,52 +56,88 @@ Request Status Change
             <div style="width: 500px" id="my-qr-reader"></div>
         </div>
     </div>
+
+<button id="debug-toggle">Toggle Debug</button>
+
+<!-- Debug panel to print matching process -->
+<div id="debug-panel">
+    <pre id="debug-output"></pre>
+</div>
+
+
 <script src="{% static '/scripts/html5-qrcode.min.js' %}"></script>
 <script>
-function domReady(fn) {
-    if (
-        document.readyState === "complete" ||
-        document.readyState === "interactive"
-    ) {
-        setTimeout(fn, 1000);
-    } else {
-        document.addEventListener("DOMContentLoaded", fn);
-    }
-}
+// Function to find a match between decodeText and num_id
+function matchNumId(decodeText) {
+    // Get the list of student IDs from your Django template or server-side
+    var studentIds = [
+        {% for student in students %}
+        "{{ student.num_id }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-domReady(function () {
+    // Debug output element
+    var debugOutput = document.getElementById("debug-output");
 
-    // If found you qr code
-    function onScanSuccess(decodeText, decodeResult) {
-        alert("You Qr is : " + decodeText, decodeResult);
-    }
+    // Clear previous output
+    debugOutput.textContent = "";
 
-    function matchNumId(decodeText) {
-        // Make sure decodeText is not empty
-        if (!decodeText) {
-            return;
-        }
+    // Print matching process to debug output
+    debugOutput.textContent += "Scanned QR code: " + decodeText + "\n";
+    debugOutput.textContent += "Matching process:\n";
 
-        var studentIds = [];
-
-        for (var i = 0; i < studentIds.length; i++){
+    // Promisify the matching process
+    return new Promise((resolve, reject) => {
+        // Iterate over each student ID and check for a match
+        for (var i = 0; i < studentIds.length; i++) {
             var num_id = studentIds[i];
+            debugOutput.textContent += "Checking student ID: " + num_id + "\n";
             if (decodeText === num_id) {
-                alert("QR code matched with num_id: " + num_id);
-                // Do something here, like updating the UI or redirecting
-            } else {
-                alert("QR code does not match with num_id");
+                debugOutput.textContent += "Match found: " + num_id + "\n";
+                resolve(num_id); // Resolve with matched ID
+                return; // Exit the loop if a match is found
             }
         }
-    }
+        // If no match is found
+        debugOutput.textContent += "No match found.\n";
+        resolve(null);
+    });
+}
 
+// Toggle debug panel visibility
+document.getElementById("debug-toggle").addEventListener("click", function() {
+    var debugPanel = document.getElementById("debug-panel");
+    debugPanel.style.display = (debugPanel.style.display === "none") ? "block" : "none";
+});
 
+// Initialize QR scanner
+document.addEventListener("DOMContentLoaded", function() {
     let htmlscanner = new Html5QrcodeScanner(
         "my-qr-reader",
         { fps: 10, qrbos: 250 }
     );
     htmlscanner.render(onScanSuccess);
 });
+
+// If found your QR code
+function onScanSuccess(decodeText, decodeResult) {
+    console.log("Scanned QR code:", decodeText);
+    // Call your matching function here
+    matchNumId(decodeText)
+        .then(matchedId => {
+            if (matchedId) {
+                console.log("Match found for QR code:", matchedId);
+                // Do something here, like updating the UI or redirecting
+            } else {
+                console.log("No matching student ID found for QR code:", decodeText);
+                alert("No matching student ID found.");
+            }
+        })
+        .catch(error => {
+            console.error("Error matching student ID:", error);
+            alert("Error matching student ID.");
+        });
+}
 </script>
 
 {% endblock %}

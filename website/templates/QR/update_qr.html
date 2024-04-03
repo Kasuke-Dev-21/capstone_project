@@ -43,9 +43,51 @@ function domReady(fn) {
 
 domReady(function () {
 
-    // If found you qr code
-    function onScanSuccess(decodeText) {
-        alert("You Qr is : " + decodeText);
+    // If found your QR code
+    function onScanSuccess(decodeText, decodeResult) {
+        alert("Your QR code is: " + decodeText);
+        // Call your matching function here
+        matchNumId(decodeText)
+            .then(matchedId => {
+                if (matchedId) {
+                    alert("QR code matched with num_id: " + matchedId);
+                    // Do something here, like updating the UI or redirecting
+                } else {
+                    alert("No matching student ID found.");
+                }
+            })
+            .catch(error => {
+                console.error("Error matching student ID:", error);
+            });
+    }
+
+    // Function to find a match between decodeText and num_id
+    function matchNumId(decodeText) {
+        // Make sure decodeText is not empty
+        if (!decodeText) {
+            return Promise.resolve(null);
+        }
+
+        // Get the list of student IDs from your Django template or server-side
+        var studentIds = [
+            {% for student_id in student_ids %}
+            "{{ student_id }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Promisify the matching process
+        return new Promise((resolve, reject) => {
+            // Iterate over each student ID and check for a match
+            for (var i = 0; i < studentIds.length; i++) {
+                var num_id = studentIds[i];
+                if (decodeText === num_id) {
+                    resolve(num_id); // Resolve with matched ID
+                    return; // Exit the loop if a match is found
+                }
+            }
+            // If no match is found
+            resolve(null);
+        });
     }
 
     let htmlscanner = new Html5QrcodeScanner(
