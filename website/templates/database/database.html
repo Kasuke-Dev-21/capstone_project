@@ -3,7 +3,7 @@
 {% load static %}
 
 {% block title %}
-  DRRM Thing
+  Attendance Database
 {% endblock %}
 
 {% block navlinks %}
@@ -50,7 +50,12 @@
 
 .profile-name a:hover {
   background-color: #ddd;
+  position: relative;
+  right: 5px;
+  bottom: 1px;
+  padding: 5px;
   color: black;
+  border-radius: 5px;
 }
 
 
@@ -59,10 +64,10 @@
 }
 
 </style>
-Student Attendance Database
 {% endblock %}
 
 {% block content %}
+<h3 style="font-size:25px; text-align:center;">Student Attendance Database</h3>
 <div style="padding-left:20px; padding-right:20px;">
     <div style="padding-left:10px; margin:auto; background-color:#f00; color:#fff; height: 40px; text-align:left; border:0; border-radius:10px;">
         <h3>Filter by:</h3>
