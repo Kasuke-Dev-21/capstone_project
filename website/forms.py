@@ -6,6 +6,11 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['fullname', 'lastname', 'age', 'level', 'strand', 'contact', 'mail_address']
 
+class StudentStatusForm(forms.ModelForm):
+    class Meta:
+        model = Student
+        fields = ['status']
+
 class HazardReportForm(forms.Form):
     map = forms.ChoiceField(label="Location of the Hazard", choices=[])
     type = forms.ChoiceField(label="Type of Hazard", choices=[])

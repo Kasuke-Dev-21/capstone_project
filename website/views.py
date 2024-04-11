@@ -4,10 +4,8 @@ from django.template import loader
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from .models import Student, Report
-from .models import Map
-from .forms import StudentForm
-from .forms import HazardReportForm
+from .models import Student, Report, Map
+from .forms import StudentForm, StudentStatusForm, HazardReportForm
 
 def main(request):
   context = {}
@@ -104,36 +102,24 @@ def map_edit(request):
   maps = Map.objects.all()
   return render(request, 'maps/map-edit.html', {'maps': maps})
 
+@login_required(login_url='/login/')
 def qr_scan(request):
-    if request.method == 'POST':
-        num_id = request.POST.get('num_id')
-        student = get_object_or_404(Student, num_id=num_id)
-        data = {
-            'firstname': student.firstname,
-            'lastname': student.lastname,
-            'fullname': student.fullname,
-            'level': student.get_level_display(),
-            'strand': student.get_strand_display(),
-            'status': student.get_status_display()
-        }
-        return JsonResponse(data)
-    return render(request, 'QR/update_qr.html')
-
-def get_student_by_num_id(request):
-    num_id = request.GET.get('num_id')
-    try:
-        student = Student.objects.get(num_id=num_id)
-        # Serialize the student object to JSON
-        student_data = {
-            'firstname': student.firstname,
-            'lastname': student.lastname,
-            'num_id': student.num_id,
-        }
-        return JsonResponse(student_data)
-    except Student.DoesNotExist:
-        return JsonResponse({'error': 'Student not found'}, status=404)
+    students = Student.objects.all()
+    form = StudentStatusForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        student_id = request.POST.get('student_id')
+        student = get_object_or_404(Student, num_id=student_id)
+        student.status = form.cleaned_data['status']
+        student.save()
+    return render(request, 'QR/update_qr.html', {'students': students, 'form': form})
 
 def testing(request):
-    reports = Report.objects.all()
-    return render(request, '_debug/template.html', {'reports': reports})
+    students = Student.objects.all()
+    form = StudentStatusForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        student_id = request.POST.get('student_id')
+        student = get_object_or_404(Student, num_id=student_id)
+        student.status = form.cleaned_data['status']
+        student.save()
+    return render(request, '_debug/template.html', {'students': students, 'form': form})
 

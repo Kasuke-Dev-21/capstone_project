@@ -3,10 +3,47 @@
 {% load static %}
 
 {% block title %}
-Search Reports
+Attendance Scanner
 {% endblock %}
 
 {% block head %}
+    <style>
+        #statusModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaaaaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Style for debug panel */
+    </style>
+
 Request Status Change
 {% endblock %}
 
@@ -23,79 +60,101 @@ Request Status Change
 
 {% block content %}
 
-    <div class="container">
-        <div style="display: flex; justify-content: center;">
-            <div style="position: relative; top: 30px; width: 500px" id="my-qr-reader"></div>
-        </div>
+<div class="container">
+    <div style="display: flex; justify-content: center;">
+        <div style="position: relative; top: 30px; width: 500px" id="my-qr-reader"></div>
     </div>
+</div>
+
+<div id="statusModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <input type="hidden" id="studentIdInput" name="student_id">
+      <button type="submit">Update Status</button>
+    </form>
+  </div>
+</div>
+
+
 <script src="{% static '/scripts/html5-qrcode.min.js' %}"></script>
 <script>
-function domReady(fn) {
-    if (
-        document.readyState === "complete" ||
-        document.readyState === "interactive"
-    ) {
-        setTimeout(fn, 1000);
-    } else {
-        document.addEventListener("DOMContentLoaded", fn);
-    }
+// Function to find a match between decodeText and num_id
+function matchNumId(decodeText) {
+    // Get the list of student IDs from your Django template or server-side
+    var studentIds = [
+        {% for student in students %}
+        "{{ student.num_id }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Promisify the matching process
+    return new Promise((resolve, reject) => {
+        // Delay the matching process to simulate scanning
+        setTimeout(() => {
+            // Check if the scanned QR code matches any student ID
+            var matchedId = studentIds.find(id => id === decodeText);
+            if (matchedId) {
+                // Display the modal with the form to update status
+                showModal(matchedId);
+                resolve(matchedId); // Resolve with matched ID
+            } else {
+                resolve(null); // Resolve with null if no match found
+            }
+        }, 2000); // 2000 milliseconds = 2 seconds delay
+    });
 }
 
-domReady(function () {
+// Function to display the modal with the form to update status
+function showModal(studentId) {
+    var modal = document.getElementById("statusModal");
+    modal.style.display = "block";
+    // Set the student ID value in the form
+    document.getElementById("studentIdInput").value = studentId;
+}
 
-    // If found your QR code
-    function onScanSuccess(decodeText, decodeResult) {
-        alert("Your QR code is: " + decodeText);
-        // Call your matching function here
-        matchNumId(decodeText)
-            .then(matchedId => {
-                if (matchedId) {
-                    alert("QR code matched with num_id: " + matchedId);
-                    // Do something here, like updating the UI or redirecting
-                } else {
-                    alert("No matching student ID found.");
-                }
-            })
-            .catch(error => {
-                console.error("Error matching student ID:", error);
-            });
-    }
-
-    // Function to find a match between decodeText and num_id
-    function matchNumId(decodeText) {
-        // Make sure decodeText is not empty
-        if (!decodeText) {
-            return Promise.resolve(null);
-        }
-
-        // Get the list of student IDs from your Django template or server-side
-        var studentIds = [
-            {% for student_id in student_ids %}
-            "{{ student_id }}"{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-
-        // Promisify the matching process
-        return new Promise((resolve, reject) => {
-            // Iterate over each student ID and check for a match
-            for (var i = 0; i < studentIds.length; i++) {
-                var num_id = studentIds[i];
-                if (decodeText === num_id) {
-                    resolve(num_id); // Resolve with matched ID
-                    return; // Exit the loop if a match is found
-                }
-            }
-            // If no match is found
-            resolve(null);
-        });
-    }
-
+// Initialize QR scanner
+document.addEventListener("DOMContentLoaded", function() {
     let htmlscanner = new Html5QrcodeScanner(
         "my-qr-reader",
         { fps: 10, qrbos: 250 }
     );
     htmlscanner.render(onScanSuccess);
 });
+
+// If found your QR code
+function onScanSuccess(decodeText, decodeResult) {
+    console.log("Scanned QR code:", decodeText);
+    // Call your matching function here
+    matchNumId(decodeText)
+        .then(matchedId => {
+            if (!matchedId) {
+                console.log("No matching student ID found for QR code:", decodeText);
+                alert("No matching student ID found.");
+            }
+        })
+        .catch(error => {
+            console.error("Error matching student ID:", error);
+            alert("Error matching student ID.");
+        });
+}
+
+// Close the modal when the user clicks on <span> (x)
+document.getElementsByClassName("close")[0].onclick = function() {
+    var modal = document.getElementById("statusModal");
+    modal.style.display = "none";
+}
+
+// Close the modal when the user clicks anywhere outside of it
+window.onclick = function(event) {
+    var modal = document.getElementById("statusModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
 </script>
+
 
 {% endblock %}
